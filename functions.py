@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 import numpy as np
 import seaborn as sns
 
-def line_plot(dates, values, ylabel, ax=None, show=True):
+def line_plot(dates, values, ylabel, linecolor='blue', ax=None, show=True):
     # create new figure and axes only if none provided
     if ax is None:
         fig, ax = plt.subplots(figsize=(14, 6))
@@ -13,7 +13,7 @@ def line_plot(dates, values, ylabel, ax=None, show=True):
         new_plot = False
 
     # plot the line
-    ax.plot(dates, values, label=ylabel, color='blue')
+    ax.plot(dates, values, label=ylabel, color=linecolor)
 
     # configure the axes once
     if new_plot:
