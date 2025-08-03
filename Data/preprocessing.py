@@ -6,6 +6,7 @@ import sys
 import os
 
 sys.path.append(os.path.abspath('..'))
+from functions import compute_daily_volatility
 
 # load csv
 df = pd.read_csv('aluminium_raw_inputs.csv')
@@ -57,6 +58,11 @@ inverse_currencies = ['euro_spot', 'australian_dollar_spot', 'uk_pound_spot']
 
 for forex_ratio in inverse_currencies:
     df[forex_ratio] = 1 / df[forex_ratio]
+
+# volatilities
+for window_size, col_name in zip([5, 22, 66, 252], ['weekly', 'monthly', 'quarterly', 'yearly']):
+    vol_window = compute_daily_volatility(df['al_lme_prices_log_returns'], window=window_size, method='rolling')
+    df[f'{col_name}_vol'] = vol_window
 
 # save new csv
 df.to_csv('aluminium_pre_inputs.csv', index=False)
