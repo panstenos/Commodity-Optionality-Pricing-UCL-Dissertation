@@ -60,7 +60,7 @@ for forex_ratio in inverse_currencies:
     df[forex_ratio] = 1 / df[forex_ratio]
 
 # volatilities
-for window_size, col_name in zip([5, 22, 66, 252], ['weekly', 'monthly', 'quarterly', 'yearly']):
+for window_size, col_name in zip([5, 22, 66, 252], ['1w', '1m', '3m', '1y']):
     vol_window = compute_daily_volatility(df['al_lme_prices_log_returns'], window=window_size, method='rolling')
     df[f'{col_name}_vol'] = vol_window
 

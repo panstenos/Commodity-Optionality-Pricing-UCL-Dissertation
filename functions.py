@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error
@@ -27,19 +28,24 @@ def line_plot(dates, values, ylabel, graphtitle='Time Series', linecolor='blue',
         new_plot = True
     else:
         new_plot = False
+        fig = None
 
     if useDates: 
         dates = pd.to_datetime(dates)
-        ax.plot(dates, values, label=ylabel, color=linecolor)
     else:
-        ax.plot(values, label=ylabel, color=linecolor)
+        dates = np.arange(0, len(values))
+    ax.plot(dates, values, label=ylabel, color=linecolor)
 
     if new_plot:
-        ax.set_xlabel('Date')
         ax.set_ylabel(ylabel)
-        ax.xaxis.set_major_locator(mdates.YearLocator(1))
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-        ax.tick_params(axis='x', rotation=45)
+        if useDates:
+            ax.set_xlabel('Date')
+            ax.xaxis.set_major_locator(mdates.YearLocator(1))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+            ax.tick_params(axis='x', rotation=45)
+        else:
+            ax.set_xlabel('trading day')
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=10, integer=True))
         ax.grid(True)
         ax.set_title(graphtitle)
     ax.legend()
@@ -48,7 +54,7 @@ def line_plot(dates, values, ylabel, graphtitle='Time Series', linecolor='blue',
         plt.tight_layout()
         plt.show()
 
-    return ax
+    return ax, fig
 
 
 def mase(y_true, y_pred):
@@ -130,6 +136,24 @@ def mae(y_true, y_pred):
 
     return mean_absolute_error(y_true, y_pred)
 
+def mape(y_true, y_pred): 
+    """
+    Calculates Mean Absolute Percentage Error (MAPE).
+
+    Parameters:
+    - y_true (array-like): True values.
+    - y_pred (array-like): Predicted values.
+
+    Returns:
+    - float: MAPE score.
+    """
+    assert len(y_true) == len(y_pred), "sequences have different lengths"
+
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
 
 def compute_daily_volatility(prices: pd.Series, window: int = 20, method: str = 'rolling') -> pd.Series:
     """
@@ -152,3 +176,7 @@ def compute_daily_volatility(prices: pd.Series, window: int = 20, method: str = 
         raise ValueError("Method must be either 'rolling' or 'ewm'.")
 
     return vol
+
+def pred_char_to_value(s):
+    hashMap = {'1w':5, '1m':22, '3m':66, '1y':252}
+    return hashMap[s]
