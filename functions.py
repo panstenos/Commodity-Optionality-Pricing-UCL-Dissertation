@@ -175,7 +175,7 @@ def compute_daily_volatility(prices: pd.Series, window: int = 20, method: str = 
     else:
         raise ValueError("Method must be either 'rolling' or 'ewm'.")
 
-    return vol
+    return np.sqrt(252)*vol
 
 def pred_char_to_value(s):
     hashMap = {'1w':5, '1m':22, '3m':66, '1y':252}
