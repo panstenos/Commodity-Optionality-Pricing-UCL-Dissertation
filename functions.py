@@ -180,3 +180,7 @@ def compute_daily_volatility(prices: pd.Series, window: int = 20, method: str = 
 def pred_char_to_value(s):
     hashMap = {'1w':5, '1m':22, '3m':66, '1y':252}
     return hashMap[s]
+
+def pred_value_to_char(n):
+    hashMap = {5:'1w', 22:'1m', 66:'3m', 252:'1y'}
+    return hashMap[n]
