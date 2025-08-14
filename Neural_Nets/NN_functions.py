@@ -1,4 +1,4 @@
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
@@ -11,8 +11,9 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, parent_dir)
 sys.path.pop(0)
-from functions import mape, mae, rmse, mse, line_plot
+from functions import mape, mae, rmse, mse, mase, pred_char_to_value, line_plot, pred_value_to_char
 from copy import deepcopy as dc
+import pandas as plot_dir
 import pandas as pd
 
 class TimeSeriesDataset(Dataset):
@@ -34,10 +35,10 @@ def get_dataloaders(X_scaled, y_raw, window_size, expiry, train_ratio=0.80, batc
     split_index = int(len(y_raw) * 0.80)
 
     X_train = X_scaled[:split_index]
-    X_test = X_scaled[split_index+window_size+expiry:]
+    X_test = X_scaled[split_index:]
 
     y_train = y_scaled[:split_index]
-    y_test = y_scaled[split_index+window_size+expiry:]
+    y_test = y_scaled[split_index:]
 
     if debug:
         print(f"Debug - X_train shape before reshape: {X_train.shape}, ndim: {X_train.ndim}")
@@ -60,7 +61,7 @@ def get_dataloaders(X_scaled, y_raw, window_size, expiry, train_ratio=0.80, batc
         pass
     else:
         # Fallback to single feature
-        print(f"Debug - Fallback reshape to single feature")
+        if debug: print(f"Debug - Fallback reshape to single feature")
         X_train = X_train.reshape((-1, window_size, 1))
         X_test = X_test.reshape((-1, window_size, 1))
 
@@ -109,6 +110,24 @@ class LSTM(nn.Module):
         c0 = torch.zeros(self.num_stacked_layers, batch_size, self.hidden_size).to(device)
 
         out, _ = self.lstm(x, (h0, c0))
+        out = self.activation(out[:, -1, :])
+        out = self.fc(out)
+        return out
+
+class GRU(nn.Module):
+    def __init__(self, input_size, hidden_size=128, num_stacked_layers=2, output_size=1, activation=nn.Tanh()):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.num_stacked_layers = num_stacked_layers
+        self.gru = nn.GRU(input_size, hidden_size, num_stacked_layers, batch_first=True)
+        self.activation = nn.Tanh()
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        h0 = torch.zeros(self.num_stacked_layers, batch_size, self.hidden_size).to(device)
+
+        out, _ = self.gru(x, h0)
         out = self.activation(out[:, -1, :])
         out = self.fc(out)
         return out
@@ -717,7 +736,7 @@ def create_model(input_size, hidden_size, num_layers, output_size=1, activation_
         num_layers: Number of stacked layers
         output_size: Output dimension
         activation_fn: Activation function
-        model_type: Type of model to create ('LSTM', 'VMD_LSTM', or 'STL_LSTM'). Default is 'LSTM'
+        model_type: Type of model to create ('LSTM', 'GRU', 'VMD_LSTM', or 'STL_LSTM'). Default is 'LSTM'
         debug: Enable debug mode for VDM-LSTM (prints dimension information)
         seasonal_period: Seasonal period for STL-LSTM (default: 12)
         trend_window: Trend window size for STL-LSTM (default: 7)
@@ -768,6 +787,11 @@ def create_model(input_size, hidden_size, num_layers, output_size=1, activation_
         print(f"Created STL-LSTM model with {num_layers} layers, hidden size {hidden_size}, "
               f"seasonal_period={seasonal_period}, trend_window={trend_window}")
         
+    elif model_type.upper() == 'GRU':
+        # Create GRU model
+        model = GRU(input_size, hidden_size, num_layers, output_size, activation=activation_fn).to(device)
+        print(f"Created GRU model with {num_layers} layers, hidden size {hidden_size}")
+        
     else:
         # Default LSTM model
         model = LSTM(input_size, hidden_size, num_layers, output_size, activation=activation_fn).to(device)
@@ -775,7 +799,7 @@ def create_model(input_size, hidden_size, num_layers, output_size=1, activation_
     
     return model
 
-def train_one_epoch(model, optimizer, loss_function, train_loader):
+def train_one_epoch(model, optimizer, loss_function, train_loader, silence=True):
     model.train(True)
     running_loss = 0.0
     total_batches = 0
@@ -793,11 +817,12 @@ def train_one_epoch(model, optimizer, loss_function, train_loader):
         optimizer.step()
 
     avg_loss = running_loss / total_batches
-    print(f"Training Loss: {avg_loss:.3f}")
+    if not silence:
+        print(f"Training Loss: {avg_loss:.3f}")
     return avg_loss
 
 
-def validate_one_epoch(model, loss_function, test_loader):
+def validate_one_epoch(model, loss_function, test_loader, silence=True):
     model.eval()  # proper eval mode
     running_loss = 0.0
     total_batches = 0
@@ -811,7 +836,8 @@ def validate_one_epoch(model, loss_function, test_loader):
             total_batches += 1
 
     avg_loss = running_loss / total_batches
-    print(f"Validation Loss: {avg_loss:.3f}")
+    if not silence:
+        print(f"Validation Loss: {avg_loss:.3f}")
     return avg_loss
 
 def minmaxscale_df(df, exclude_columns=None):
@@ -953,94 +979,101 @@ def train_model(model, optimizer, loss_function, train_loader, test_loader, epoc
     val_losses = []
 
     for epoch in range(1, epochs + 1):
-        print(f"Epoch {epoch}/{epochs}")
-        train_loss = train_one_epoch(model, optimizer, loss_function, train_loader)
-        val_loss = validate_one_epoch(model, loss_function, test_loader)
+        if epoch % 5 == 0:
+            print(f"Epoch {epoch}/{epochs}")
+        train_loss = train_one_epoch(model, optimizer, loss_function, train_loader, epoch % 5)
+        val_loss = validate_one_epoch(model, loss_function, test_loader, epoch % 5)
 
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
 
-    plt.figure(figsize=(8, 5))
-    plt.plot(range(1, epochs + 1), train_losses, label="Train Loss")
-    plt.plot(range(1, epochs + 1), val_losses, label="Validation Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Training & Validation Loss Over Epochs")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # plt.figure(figsize=(8, 5))
+    # plt.plot(range(1, epochs + 1), train_losses, label="Train Loss")
+    # plt.plot(range(1, epochs + 1), val_losses, label="Validation Loss")
+    # plt.xlabel("Epoch")
+    # plt.ylabel("Loss")
+    # plt.title("Training & Validation Loss Over Epochs")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
     return train_losses, val_losses
 
 
-def plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, expiry, n_points=300):
+def plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, expiry, filename_suffix='', n_points=300, model_type='LSTM'):
     """
-    Plots train and test predictions side-by-side after inverse scaling.
-
-    Parameters:
-        model: Trained PyTorch model
-        X_train, y_train: Training data and labels
-        X_test, y_test: Testing data and labels
-        y_scaler: Fitted scaler for inverse transformation
-        window: Lookback window size (used to match scaler input shape)
-        device: Torch device ("cpu" or "cuda")
-        n_points: Number of points to plot
+    Generates and saves train and test prediction plots into model-specific plots directory.
     """
-
     def inverse_transform_predictions(X, y, model):
-        # Predict
         predictions = model(X.to(device)).detach().cpu().numpy().flatten()
-        # Inverse scale predictions
-        dummies = np.zeros((X.shape[0], window+1))
+
+        dummies = np.zeros((X.shape[0], window + 1))
         dummies[:, 0] = predictions
         dummies = y_scaler.inverse_transform(dummies)
         predictions = dc(dummies[:, 0])
-        # Inverse scale true values
-        dummies = np.zeros((X.shape[0], window+1))
-        dummies[:, 0] = y.flatten()
+
+        dummies = np.zeros((X.shape[0], window + 1))
+        dummies[:, 0] = y.detach().cpu().numpy().flatten()
         dummies = y_scaler.inverse_transform(dummies)
         true_vals = dc(dummies[:, 0])
+
         return true_vals, predictions
 
-    # Get inverse transformed predictions
-    new_y_train, train_predictions = inverse_transform_predictions(X_train, y_train, model)
-    new_y_test, test_predictions = inverse_transform_predictions(X_test, y_test, model)
+    # Create output directory based on model type
+    output_dir = f"{model_type}_plots"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Train predictions
+    train_true, train_pred = inverse_transform_predictions(X_train, y_train, model)
+
+    ax, fig1 = line_plot(train_true[:n_points], train_true[:n_points], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_train_{filename_suffix}', linecolor='red', show=False)
+    _, _ = line_plot(train_pred[:n_points], train_pred[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    # fig.savefig(os.path.join(output_dir, f"{expiry}_vol_vs_true_train_{filename_suffix}.png"))
+    # plt.show()
+    plt.close()
 
 
-    ax, fig = line_plot(new_y_train[:n_points], new_y_train[:n_points], ylabel='vol_true', graphtitle=expiry, linecolor='red', show=False)
-    _, _ = line_plot(train_predictions[:n_points], train_predictions[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    # Test predictions
+    test_true, test_pred = inverse_transform_predictions(X_test, y_test, model)
 
-    ax, fig = line_plot(new_y_test[:n_points], new_y_test[:n_points], ylabel='vol_true', graphtitle=expiry, linecolor='red', show=False)
-    _, _ = line_plot(test_predictions[:n_points], test_predictions[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    ax, fig2 = line_plot(test_true[:n_points], test_true[:n_points], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_train_{filename_suffix}', linecolor='red', show=False)
+    _, _ = line_plot(test_pred[:n_points], test_pred[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    # fig.savefig(os.path.join(output_dir, f"{expiry}_vol_vs_true_test_{filename_suffix}.png"))
+    # plt.show()
+    plt.close()
+
+    return fig1, fig2
 
 
 def evaluate_and_print_metrics(model, X_test, y_test, y_scaler, window, device):
     """
-    Evaluates the model on the test set and prints various metrics.
-
-    Parameters:
-        model: Trained PyTorch model
-        X_test, y_test: Testing data and labels
-        y_scaler: Fitted scaler for inverse transformation
-        window: Lookback window size (used to match scaler input shape)
-        device: Torch device ("cpu" or "cuda")
+    Evaluates the model on the test set, prints metrics in one line, and returns them.
     """
     model.eval()
     with torch.no_grad():
         test_predictions_scaled = model(X_test.to(device)).detach().cpu().numpy().flatten()
 
-    # Inverse scale predictions and true values for metric calculation
     dummies_pred = np.zeros((X_test.shape[0], window + 1))
     dummies_pred[:, 0] = test_predictions_scaled
     test_predictions = y_scaler.inverse_transform(dummies_pred)[:, 0]
 
     dummies_true = np.zeros((X_test.shape[0], window + 1))
-    dummies_true[:, 0] = y_test.flatten()
+    dummies_true[:, 0] = y_test.detach().cpu().numpy().flatten()
     test_true_vals = y_scaler.inverse_transform(dummies_true)[:, 0]
 
-    print("\nTest Set Metrics:")
-    print(f"MAPE: {mape(test_true_vals, test_predictions):.4f}")
-    print(f"MAE: {mae(test_true_vals, test_predictions):.4f}")
-    print(f"RMSE: {rmse(test_true_vals, test_predictions):.4f}")
-    print(f"MSE: {mse(test_true_vals, test_predictions):.4f}")
+    mape_val = mape(test_true_vals, test_predictions)
+    mae_val = mae(test_true_vals, test_predictions)
+    rmse_val = rmse(test_true_vals, test_predictions)
+    mse_val = mse(test_true_vals, test_predictions)
+    mase_val = mase(test_true_vals, test_predictions)  # Assumes mase() is defined
+
+    print(f"Test Set Metrics - MAPE: {mape_val:.2f}, MAE: {mae_val:.2f}, RMSE: {rmse_val:.2f}, MSE: {mse_val:.2f}, MASE: {mase_val:.2f}")
+
+    return {
+        "MAPE": mape_val,
+        "MAE": mae_val,
+        "RMSE": rmse_val,
+        "MSE": mse_val,
+        "MASE": mase_val
+    }

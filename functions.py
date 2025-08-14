@@ -186,9 +186,9 @@ def pred_value_to_char(n):
     hashMap = {5:'1w', 22:'1m', 66:'3m', 252:'1y'}
     return hashMap[n]
 
-def load_data(data_path='../Data/aluminium_pre_inputs.csv'):
+def load_data(data_path='../Data/aluminium_pre_inputs.csv', index_col=None):
     """Load the aluminium price data."""
-    return pd.read_csv(data_path)
+    return pd.read_csv(data_path, index_col=0)
 
 def plot_squared_pacf(df, col_name):
     """

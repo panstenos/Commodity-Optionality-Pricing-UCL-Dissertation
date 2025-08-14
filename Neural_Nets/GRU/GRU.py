@@ -35,7 +35,7 @@ def find_n_best_features(expiry, n):
     best_features = top_rows.index.tolist()
     return best_features
 
-def LSTM_main_experiment(expiry, features_names, features_names_suffix):
+def GRU_main_experiment(expiry, features_names, features_names_suffix):
     window = expiry*2
     batch_size = 128
 
@@ -48,7 +48,7 @@ def LSTM_main_experiment(expiry, features_names, features_names_suffix):
 
     X_raw, y_raw, input_size = preprocess_dataframe(df[features_names], df[f'{pred_value_to_char(expiry)}_vol'], window, expiry)
     trainloader, testloader, y_scaler, X_train, X_test, y_train, y_test = get_dataloaders(X_raw, y_raw, window, expiry, batch_size)
-    model = create_model(input_size, hidden_size, number_layers, output_size, activation_fn=nn.ReLU())
+    model = create_model(input_size, hidden_size, number_layers, output_size, activation_fn=nn.ReLU(), model_type='GRU')
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_losses, val_losses = train_model(model, optimizer, loss_function, trainloader, testloader, n_epochs)
 
@@ -61,7 +61,7 @@ def LSTM_main_experiment(expiry, features_names, features_names_suffix):
     plt.close(training_fig)
 
     # Plot the train and test predictions
-    fig1, fig2 = plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, f'{pred_value_to_char(expiry)}_vol', features_names_suffix)
+    fig1, fig2 = plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, f'{pred_value_to_char(expiry)}_vol', features_names_suffix, model_type='GRU')
     
     # Save plots in the plots directory
     fig1.savefig(os.path.join(plots_dir, f"{expiry}_vol_vs_true_train_{features_names_suffix}.png"))
@@ -78,19 +78,19 @@ for expiry in [5, 22, 66, 252]:
     best_features = find_n_best_features(expiry, 20)
 
     # 1. abs_log_returns
-    metrics1 = LSTM_main_experiment(expiry=expiry, features_names='al_lme_prices_abs_log_returns', features_names_suffix=f'LSTM_{names[0]}_{pred_value_to_char(expiry)}_exp')
+    metrics1 = GRU_main_experiment(expiry=expiry, features_names='al_lme_prices_abs_log_returns', features_names_suffix=f'GRU_{names[0]}_{pred_value_to_char(expiry)}_exp')
 
     # 2. best_metric
-    metrics2 = LSTM_main_experiment(expiry=expiry, features_names=best_features[0], features_names_suffix=f'LSTM_{names[1]}_{pred_value_to_char(expiry)}_exp')
+    metrics2 = GRU_main_experiment(expiry=expiry, features_names=best_features[0], features_names_suffix=f'GRU_{names[1]}_{pred_value_to_char(expiry)}_exp')
 
     # 3. best_10
-    metrics3 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:5], features_names_suffix=f'LSTM_{names[2]}_{pred_value_to_char(expiry)}_exp')
+    metrics3 = GRU_main_experiment(expiry=expiry, features_names=best_features[:5], features_names_suffix=f'GRU_{names[2]}_{pred_value_to_char(expiry)}_exp')
     
     # 4. top_10
-    metrics4 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:10], features_names_suffix=f'LSTM_{names[3]}_{pred_value_to_char(expiry)}_exp')
+    metrics4 = GRU_main_experiment(expiry=expiry, features_names=best_features[:10], features_names_suffix=f'GRU_{names[3]}_{pred_value_to_char(expiry)}_exp')
 
     # 5. top_20
-    metrics5 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:20], features_names_suffix=f'LSTM_{names[4]}_{pred_value_to_char(expiry)}_exp')
+    metrics5 = GRU_main_experiment(expiry=expiry, features_names=best_features[:20], features_names_suffix=f'GRU_{names[4]}_{pred_value_to_char(expiry)}_exp')
 
     # Combine all metrics for this expiry
     expiry_metrics = {
@@ -99,7 +99,7 @@ for expiry in [5, 22, 66, 252]:
         'MAE': [metrics1['MAE'], metrics2['MAE'], metrics3['MAE'], metrics4['MAE'], metrics5['MAE']],
         'RMSE': [metrics1['RMSE'], metrics2['RMSE'], metrics3['RMSE'], metrics4['RMSE'], metrics5['RMSE']],
         'MSE': [metrics1['MSE'], metrics2['MSE'], metrics3['MSE'], metrics4['MSE'], metrics5['MSE']],
-        'MASE': [metrics1['MASE'], metrics2['MASE'], metrics4['MASE'], metrics5['MASE']]
+        'MASE': [metrics1['MASE'], metrics2['MASE'], metrics3['MASE'], metrics4['MASE'], metrics5['MASE']]
     }
 
     # Save metrics to CSV in the metrics directory
