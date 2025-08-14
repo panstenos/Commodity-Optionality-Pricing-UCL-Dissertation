@@ -17,42 +17,18 @@ import sys
 import os
 import warnings
 from tqdm import tqdm
-from statsmodels.graphics.tsaplots import plot_pacf
 
 # Add parent directory to path for imports
 sys.path.append(os.path.abspath('..'))
 from functions import line_plot, mse, mae, rmse, mape, mase, pred_char_to_value
 
+from functions import load_data, plot_squared_pacf
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
 # Configuration variables
 horizon_char = ['1w', '1m', '3m', '1y']
 horizon_vals = [5, 22, 66, 252]
-
-
-def load_data(data_path='../Data/aluminium_pre_inputs.csv'):
-    """Load the aluminium price data."""
-    return pd.read_csv(data_path)
-
-def plot_squared_pacf(df, col_name):
-    """
-    Plot the Partial AutoCorrelation Function for the squared values of a given column in a dataframe.
-    """
-    # Create plots directory if it doesn't exist
-    import os
-    plots_dir = "plots"
-    if not os.path.exists(plots_dir):
-        os.makedirs(plots_dir)
-    
-    # Generate the plot
-    plot_pacf(df[col_name]**2)
-    
-    # Save the plot
-    filename = f"{plots_dir}/pacf_squared_{col_name}.png"
-    plt.savefig(filename, dpi=300, bbox_inches='tight')
-    plt.close()  # Close the figure to free memory
-    print(f"Plot saved as: {filename}")
 
 def plot_raw_data(X, y, title):
     """

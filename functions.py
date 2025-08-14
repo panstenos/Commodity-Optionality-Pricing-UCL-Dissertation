@@ -5,6 +5,8 @@ from matplotlib.ticker import MaxNLocator
 import numpy as np
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, root_mean_squared_error, mean_absolute_error
+import os
+from statsmodels.graphics.tsaplots import plot_pacf
 
 def line_plot(dates, values, ylabel, graphtitle='Time Series', linecolor='blue', ax=None, show=True, useDates=False):
     """
@@ -55,7 +57,6 @@ def line_plot(dates, values, ylabel, graphtitle='Time Series', linecolor='blue',
         plt.show()
 
     return ax, fig
-
 
 def mase(y_true, y_pred):
     """
@@ -184,3 +185,25 @@ def pred_char_to_value(s):
 def pred_value_to_char(n):
     hashMap = {5:'1w', 22:'1m', 66:'3m', 252:'1y'}
     return hashMap[n]
+
+def load_data(data_path='../Data/aluminium_pre_inputs.csv'):
+    """Load the aluminium price data."""
+    return pd.read_csv(data_path)
+
+def plot_squared_pacf(df, col_name):
+    """
+    Plot the Partial AutoCorrelation Function for the squared values of a given column in a dataframe.
+    """
+    # Create plots directory if it doesn't exist
+    plots_dir = "plots"
+    if not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+    
+    # Generate the plot
+    plot_pacf(df[col_name]**2)
+    
+    # Save the plot
+    filename = f"{plots_dir}/pacf_squared_{col_name}.png"
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+    plt.close()  # Close the figure to free memory
+    print(f"Plot saved as: {filename}")

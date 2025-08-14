@@ -63,6 +63,8 @@ for forex_ratio in inverse_currencies:
 for window_size, col_name in zip([5, 22, 66, 252], ['1w', '1m', '3m', '1y']):
     vol_window = compute_daily_volatility(df['al_lme_prices_log_returns'], window=window_size, method='rolling')
     df[f'{col_name}_vol'] = vol_window
+    
+df['al_lme_prices_abs_log_returns'] = abs(df['al_lme_prices_log_returns'])
 
 # save new csv
 df.to_csv('aluminium_pre_inputs.csv', index=False)
