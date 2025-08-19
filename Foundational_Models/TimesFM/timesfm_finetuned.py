@@ -293,10 +293,12 @@ def plot_predictions_using_line_plot(y_true, y_pred, expiry, features_names_suff
     time_index = range(len(y_true))
     
     # Use line_plot function like in LSTM.py
-    ax, fig = line_plot(time_index, y_true, ylabel='True Values', 
+    # Plot predictions in blue first
+    ax, fig = line_plot(time_index, y_pred, ylabel='pred_vol', 
                         graphtitle=f'TimesFM Fine-tuned: True vs Predicted {features_names_suffix}', 
                         linecolor='blue', show=False)
-    _, _ = line_plot(time_index, y_pred, ylabel='Predicted Values', ax=ax, show=True)
+    # Plot true values in red
+    _, _ = line_plot(time_index, y_true, ylabel='true_vol', linecolor='red', ax=ax, show=True)
     
     # Save plot
     fig.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -342,9 +344,9 @@ def TimesFM_finetuned_experiment(expiry, features_names, features_names_suffix):
     input_size = X_raw.shape[-1]
     model = create_timesfm_model(
         input_size=input_size,
-        hidden_size=128,
-        num_layers=4,
-        num_heads=8,
+        hidden_size=64,   # Smaller for stability
+        num_layers=2,     # Fewer layers for efficiency
+        num_heads=4,      # Fewer heads
         dropout=0.1,
         max_seq_length=1000
     ).to(device)

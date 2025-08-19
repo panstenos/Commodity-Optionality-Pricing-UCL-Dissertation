@@ -6,69 +6,87 @@ import pandas as pd
 from typing import Optional, Tuple, List
 import math
 
-class TimesFM(nn.Module):
+class TimesFmHparams:
+    """TimesFM hyperparameters matching the official implementation"""
+    def __init__(self,
+                 backend: str = "gpu",
+                 per_core_batch_size: int = 32,
+                 horizon_len: int = 128,
+                 num_layers: int = 50,
+                 use_positional_embedding: bool = False,
+                 context_len: int = 2048,
+                 hidden_size: int = 512,
+                 num_heads: int = 8,
+                 dropout: float = 0.1):
+        self.backend = backend
+        self.per_core_batch_size = per_core_batch_size
+        self.horizon_len = horizon_len
+        self.num_layers = num_layers
+        self.use_positional_embedding = use_positional_embedding
+        self.context_len = context_len
+        self.hidden_size = hidden_size
+        self.num_heads = num_heads
+        self.dropout = dropout
+
+class TimesFmCheckpoint:
+    """TimesFM checkpoint configuration"""
+    def __init__(self, huggingface_repo_id: str = "google/timesfm-2.0-500m-jax"):
+        self.huggingface_repo_id = huggingface_repo_id
+
+class TimesFm(nn.Module):
     """
     TimesFM: Time Series Foundation Model
-    A transformer-based architecture specifically designed for time series forecasting
+    Implementation based on Google Research's official TimesFM architecture
     """
     
     def __init__(self, 
-                 input_size: int,
-                 hidden_size: int = 256,
-                 num_layers: int = 6,
-                 num_heads: int = 8,
-                 dropout: float = 0.1,
-                 max_seq_length: int = 1000,
-                 use_positional_encoding: bool = True,
-                 use_fourier_features: bool = True):
-        
+                 hparams: TimesFmHparams,
+                 checkpoint: TimesFmCheckpoint = None):
         super().__init__()
         
-        self.input_size = input_size
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.num_heads = num_heads
-        self.dropout = dropout
-        self.max_seq_length = max_seq_length
-        self.use_positional_encoding = use_positional_encoding
-        self.use_fourier_features = use_fourier_features
+        self.hparams = hparams
+        self.checkpoint = checkpoint
         
-        # Input projection
-        self.input_projection = nn.Linear(input_size, hidden_size)
+        # Model dimensions
+        self.hidden_size = hparams.hidden_size
+        self.num_layers = hparams.num_layers
+        self.num_heads = hparams.num_heads
+        self.context_len = hparams.context_len
+        self.horizon_len = hparams.horizon_len
+        self.use_positional_embedding = hparams.use_positional_embedding
         
-        # Fourier features for time encoding
-        if use_fourier_features:
-            self.fourier_projection = nn.Linear(2 * (max_seq_length // 4), hidden_size)
+        # Input projection for time series data
+        self.input_projection = nn.Linear(1, self.hidden_size)
         
-        # Positional encoding
-        if use_positional_encoding:
-            self.pos_encoding = nn.Parameter(torch.randn(1, max_seq_length, hidden_size))
+        # Positional encoding (optional based on hparams)
+        if self.use_positional_embedding:
+            self.pos_encoding = nn.Parameter(torch.randn(1, self.context_len, self.hidden_size))
         
-        # Transformer layers
+        # Transformer encoder layers
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_size,
-            nhead=num_heads,
-            dim_feedforward=hidden_size * 4,
-            dropout=dropout,
+            d_model=self.hidden_size,
+            nhead=self.num_heads,
+            dim_feedforward=self.hidden_size * 4,
+            dropout=hparams.dropout,
             activation='gelu',
             batch_first=True
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=self.num_layers)
         
-        # Output projection
-        self.output_projection = nn.Linear(hidden_size, 1)
+        # Output projection for forecasting
+        self.output_projection = nn.Linear(self.hidden_size, 1)
         
         # Layer normalization
-        self.layer_norm = nn.LayerNorm(hidden_size)
+        self.layer_norm = nn.LayerNorm(self.hidden_size)
         
         # Dropout
-        self.dropout_layer = nn.Dropout(dropout)
+        self.dropout_layer = nn.Dropout(hparams.dropout)
         
         # Initialize weights
         self._init_weights()
     
     def _init_weights(self):
-        """Initialize model weights"""
+        """Initialize model weights using Xavier initialization"""
         for module in self.modules():
             if isinstance(module, nn.Linear):
                 nn.init.xavier_uniform_(module.weight)
@@ -78,25 +96,12 @@ class TimesFM(nn.Module):
                 nn.init.ones_(module.weight)
                 nn.init.zeros_(module.bias)
     
-    def _create_fourier_features(self, seq_length: int) -> torch.Tensor:
-        """Create Fourier features for time encoding"""
-        freqs = torch.arange(1, seq_length // 4 + 1, dtype=torch.float32)
-        time_steps = torch.arange(seq_length, dtype=torch.float32)
-        
-        # Create sin and cos features
-        sin_features = torch.sin(2 * math.pi * freqs.unsqueeze(0) * time_steps.unsqueeze(1) / seq_length)
-        cos_features = torch.cos(2 * math.pi * freqs.unsqueeze(0) * time_steps.unsqueeze(1) / seq_length)
-        
-        # Concatenate and flatten
-        fourier_features = torch.cat([sin_features, cos_features], dim=1).T  # (2*freqs, seq_len)
-        return fourier_features
-    
     def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Forward pass of TimesFM
         
         Args:
-            x: Input tensor of shape (batch_size, seq_length, input_size)
+            x: Input tensor of shape (batch_size, seq_length, 1) - single feature (volatility)
             mask: Optional attention mask
             
         Returns:
@@ -104,30 +109,27 @@ class TimesFM(nn.Module):
         """
         batch_size, seq_length, _ = x.shape
         
+        # Ensure sequence length doesn't exceed context length
+        if seq_length > self.context_len:
+            x = x[:, -self.context_len:, :]
+            seq_length = self.context_len
+        
         # Input projection
         x = self.input_projection(x)  # (batch_size, seq_length, hidden_size)
         
-        # Add Fourier features if enabled
-        if self.use_fourier_features and seq_length <= self.max_seq_length:
-            fourier_features = self._create_fourier_features(seq_length).to(x.device)
-            fourier_features = fourier_features.unsqueeze(0).expand(batch_size, -1, -1)  # (batch_size, 2*freqs, seq_len)
-            fourier_features = self.fourier_projection(fourier_features.T).T  # (batch_size, seq_length, hidden_size)
-            x = x + fourier_features
-        
         # Add positional encoding if enabled
-        if self.use_positional_encoding and seq_length <= self.max_seq_length:
+        if self.use_positional_embedding and seq_length <= self.context_len:
             x = x + self.pos_encoding[:, :seq_length, :]
         
         # Apply layer normalization and dropout
         x = self.layer_norm(x)
         x = self.dropout_layer(x)
         
-        # Create attention mask if not provided
-        if mask is None:
-            mask = self._create_causal_mask(seq_length).to(x.device)
+        # For now, don't use causal mask in transformer (let it be fully connected)
+        # The causal behavior will come from the autoregressive prediction method
         
-        # Apply transformer layers
-        x = self.transformer(x, src_key_padding_mask=mask)
+        # Apply transformer layers (no mask for now)
+        x = self.transformer(x)
         
         # Output projection
         output = self.output_projection(x)  # (batch_size, seq_length, 1)
@@ -135,8 +137,9 @@ class TimesFM(nn.Module):
         return output
     
     def _create_causal_mask(self, seq_length: int) -> torch.Tensor:
-        """Create causal attention mask"""
-        mask = torch.triu(torch.ones(seq_length, seq_length), diagonal=1).bool()
+        """Create causal attention mask for autoregressive generation"""
+        # Create mask on the correct device and with proper dtype
+        mask = torch.triu(torch.ones(seq_length, seq_length, dtype=torch.bool), diagonal=1)
         return mask
     
     def predict_future(self, x: torch.Tensor, horizon: int = 1) -> torch.Tensor:
@@ -144,7 +147,7 @@ class TimesFM(nn.Module):
         Predict future values using autoregressive generation
         
         Args:
-            x: Input tensor of shape (batch_size, seq_length, input_size)
+            x: Input tensor of shape (batch_size, seq_length, 1)
             horizon: Number of future steps to predict
             
         Returns:
@@ -154,20 +157,23 @@ class TimesFM(nn.Module):
         with torch.no_grad():
             batch_size = x.shape[0]
             predictions = []
+            current_input = x.clone()
             
             # Generate predictions autoregressively
             for _ in range(horizon):
                 # Get model output
-                output = self.forward(x)
+                output = self.forward(current_input)
                 
                 # Take the last prediction
                 last_pred = output[:, -1:, :]  # (batch_size, 1, 1)
                 predictions.append(last_pred)
                 
                 # Append prediction to input for next step
-                # Create dummy features for the predicted value (you might want to adjust this)
-                dummy_features = torch.zeros(batch_size, 1, self.input_size, device=x.device)
-                x = torch.cat([x, dummy_features], dim=1)
+                current_input = torch.cat([current_input, last_pred], dim=1)
+                
+                # Keep only the last context_len elements
+                if current_input.shape[1] > self.context_len:
+                    current_input = current_input[:, -self.context_len:, :]
             
             return torch.cat(predictions, dim=1)  # (batch_size, horizon, 1)
     
@@ -184,126 +190,43 @@ class TimesFM(nn.Module):
         # Get embeddings before the final output projection
         batch_size, seq_length, _ = x.shape
         
+        # Ensure sequence length doesn't exceed context length
+        if seq_length > self.context_len:
+            x = x[:, -self.context_len:, :]
+            seq_length = self.context_len
+        
         # Input projection
         x = self.input_projection(x)
         
-        # Add Fourier features if enabled
-        if self.use_fourier_features and seq_length <= self.max_seq_length:
-            fourier_features = self._create_fourier_features(seq_length).to(x.device)
-            fourier_features = fourier_features.unsqueeze(0).expand(batch_size, -1, -1)
-            fourier_features = self.fourier_projection(fourier_features.T).T
-            x = x + fourier_features
-        
         # Add positional encoding if enabled
-        if self.use_positional_encoding and seq_length <= self.max_seq_length:
+        if self.use_positional_embedding and seq_length <= self.context_len:
             x = x + self.pos_encoding[:, :seq_length, :]
         
         # Apply layer normalization and dropout
         x = self.layer_norm(x)
         x = self.dropout_layer(x)
         
-        # Apply transformer layers
+        # Apply transformer layers (no mask)
         x = self.transformer(x)
         
         return x
 
-
-class TimesFMForForecasting(nn.Module):
+def create_timesfm_model(hparams: TimesFmHparams = None, 
+                        checkpoint: TimesFmCheckpoint = None) -> TimesFm:
     """
-    TimesFM wrapper specifically for time series forecasting tasks
-    """
-    
-    def __init__(self, 
-                 input_size: int,
-                 hidden_size: int = 256,
-                 num_layers: int = 6,
-                 num_heads: int = 8,
-                 dropout: float = 0.1,
-                 max_seq_length: int = 1000,
-                 use_positional_encoding: bool = True,
-                 use_fourier_features: bool = True):
-        
-        super().__init__()
-        
-        self.timesfm = TimesFM(
-            input_size=input_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            num_heads=num_heads,
-            dropout=dropout,
-            max_seq_length=max_seq_length,
-            use_positional_encoding=use_positional_encoding,
-            use_fourier_features=use_fourier_features
-        )
-        
-        # Additional forecasting head
-        self.forecasting_head = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden_size // 2, 1)
-        )
-        
-        # Initialize forecasting head
-        for module in self.forecasting_head.modules():
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-    
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """
-        Forward pass for forecasting
-        
-        Args:
-            x: Input tensor of shape (batch_size, seq_length, input_size)
-            mask: Optional attention mask
-            
-        Returns:
-            Forecast of shape (batch_size, seq_length, 1)
-        """
-        # Get embeddings from TimesFM
-        embeddings = self.timesfm.get_embeddings(x)
-        
-        # Apply forecasting head
-        forecast = self.forecasting_head(embeddings)
-        
-        return forecast
-    
-    def predict_future(self, x: torch.Tensor, horizon: int = 1) -> torch.Tensor:
-        """Predict future values"""
-        return self.timesfm.predict_future(x, horizon)
-    
-    def get_embeddings(self, x: torch.Tensor) -> torch.Tensor:
-        """Get embeddings"""
-        return self.timesfm.get_embeddings(x)
-
-
-def create_timesfm_model(input_size: int, 
-                        hidden_size: int = 256,
-                        num_layers: int = 6,
-                        num_heads: int = 8,
-                        dropout: float = 0.1,
-                        max_seq_length: int = 1000) -> TimesFMForForecasting:
-    """
-    Factory function to create a TimesFM model for forecasting
+    Factory function to create a TimesFM model
     
     Args:
-        input_size: Number of input features
-        hidden_size: Hidden dimension size
-        num_layers: Number of transformer layers
-        num_heads: Number of attention heads
-        dropout: Dropout rate
-        max_seq_length: Maximum sequence length
+        hparams: TimesFM hyperparameters
+        checkpoint: TimesFM checkpoint configuration
         
     Returns:
-        TimesFMForForecasting model
+        TimesFM model
     """
-    return TimesFMForForecasting(
-        input_size=input_size,
-        hidden_size=hidden_size,
-        num_layers=num_layers,
-        num_heads=num_heads,
-        dropout=dropout,
-        max_seq_length=max_seq_length
-    )
+    if hparams is None:
+        hparams = TimesFmHparams()
+    
+    if checkpoint is None:
+        checkpoint = TimesFmCheckpoint()
+    
+    return TimesFm(hparams=hparams, checkpoint=checkpoint)

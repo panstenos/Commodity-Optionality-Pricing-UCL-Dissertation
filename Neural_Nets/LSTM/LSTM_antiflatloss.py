@@ -5,10 +5,18 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 import sys
 import os
 import matplotlib.pyplot as plt
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, parent_dir)
-neural_nets_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, neural_nets_dir)
+
+# Add the parent directories to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))  # Go up two levels to root
+neural_nets_dir = os.path.dirname(current_dir)  # Go up one level to Neural_Nets
+
+# Add both directories to Python path
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+if neural_nets_dir not in sys.path:
+    sys.path.insert(0, neural_nets_dir)
+
 from functions import pred_value_to_char, load_data, line_plot
 import pandas as pd
 from NN_functions import preprocess_dataframe, get_dataloaders, create_model, train_model, plot_train_test_predictions, evaluate_and_print_metrics, train_one_epoch, validate_one_epoch, AntiFlatLoss

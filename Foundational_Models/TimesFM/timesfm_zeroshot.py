@@ -107,19 +107,33 @@ def evaluate_timesfm_zeroshot(model, X_test, y_test, y_scaler, window, device):
     """
     model.eval()
     
+    print(f"Debug: X_test shape: {X_test.shape}")
+    print(f"Debug: y_test shape: {y_test.shape}")
+    print(f"Debug: Device: {device}")
+    
     with torch.no_grad():
         # Move data to device
         X_test_device = X_test.to(device)
+        print(f"Debug: X_test_device shape: {X_test_device.shape}")
         
         # Get predictions
-        predictions = model(X_test_device)
+        try:
+            predictions = model(X_test_device)
+            print(f"Debug: Raw predictions shape: {predictions.shape}")
+        except Exception as e:
+            print(f"Error during model forward pass: {e}")
+            raise e
         
         # Take the last prediction for each sequence
         predictions = predictions[:, -1, :].cpu().numpy().flatten()
+        print(f"Debug: Final predictions shape: {predictions.shape}")
         
         # Inverse transform predictions
         predictions_inv = y_scaler.inverse_transform(predictions.reshape(-1, 1)).flatten()
         y_test_inv = y_scaler.inverse_transform(y_test.numpy().reshape(-1, 1)).flatten()
+        
+        print(f"Debug: Predictions_inv shape: {predictions_inv.shape}")
+        print(f"Debug: y_test_inv shape: {y_test_inv.shape}")
         
         # Calculate metrics
         mape_score = mape(y_test_inv, predictions_inv)
@@ -156,10 +170,12 @@ def plot_predictions_using_line_plot(y_true, y_pred, expiry, features_names_suff
     time_index = range(len(y_true))
     
     # Use line_plot function like in LSTM.py
-    ax, fig = line_plot(time_index, y_true, ylabel='True Values', 
+    # Plot predictions in blue first
+    ax, fig = line_plot(time_index, y_pred, ylabel='pred_vol', 
                         graphtitle=f'TimesFM Zero-shot: True vs Predicted {features_names_suffix}', 
                         linecolor='blue', show=False)
-    _, _ = line_plot(time_index, y_pred, ylabel='Predicted Values', ax=ax, show=True)
+    # Plot true values in red
+    _, _ = line_plot(time_index, y_true, ylabel='true_vol', linecolor='red', ax=ax, show=True)
     
     # Save plot
     fig.savefig(save_path, dpi=300, bbox_inches='tight')
@@ -200,9 +216,9 @@ def TimesFM_zeroshot_experiment(expiry, features_names, features_names_suffix):
     input_size = X_raw.shape[-1]
     model = create_timesfm_model(
         input_size=input_size,
-        hidden_size=128,  # Smaller for efficiency
-        num_layers=4,     # Fewer layers for zero-shot
-        num_heads=8,
+        hidden_size=64,   # Smaller for stability
+        num_layers=2,     # Fewer layers for zero-shot
+        num_heads=4,      # Fewer heads
         dropout=0.1,
         max_seq_length=1000
     ).to(device)

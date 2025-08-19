@@ -8,9 +8,15 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 from matplotlib import pyplot as plt
 import sys
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-sys.path.insert(0, parent_dir)
-sys.path.pop(0)
+
+# Add the parent directory to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)  # Go up one level to root
+
+# Add parent directory to Python path
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
 from functions import mape, mae, rmse, mse, mase, pred_char_to_value, line_plot, pred_value_to_char
 from copy import deepcopy as dc
 import pandas as plot_dir

@@ -25,8 +25,8 @@ from NN_functions import preprocess_dataframe, get_dataloaders, create_model, tr
 data_path = os.path.join(parent_dir, 'Data', 'aluminium_pre_inputs.csv')
 df = load_data(data_path)
 
-# Create main_experiment_results directory structure
-main_results_dir = os.path.join(os.path.dirname(__file__), 'main_experiment_results')
+# Create LSTM_with_vol_experiment_results directory structure
+main_results_dir = os.path.join(os.path.dirname(__file__), 'LSTM_with_vol_experiment_results')
 plots_dir = os.path.join(main_results_dir, 'plots')
 training_plots_dir = os.path.join(main_results_dir, 'training_plots')
 metrics_dir = os.path.join(main_results_dir, 'metrics')
@@ -37,13 +37,13 @@ os.makedirs(training_plots_dir, exist_ok=True)
 os.makedirs(metrics_dir, exist_ok=True)
 
 def find_n_best_features(expiry, n):
-    corr_file = os.path.join(parent_dir, 'feature_selection', 'absolute_feature_correlations.csv')
+    corr_file = os.path.join(parent_dir, 'Feature_selection', 'absolute_feature_correlations.csv')
     best_features = load_data(corr_file, index_col=0)
     top_rows = best_features.sort_values(by=f'{pred_value_to_char(expiry)}_exp', ascending=False).head(n)
     best_features = top_rows.index.tolist()
     return best_features
 
-def LSTM_main_experiment(expiry, features_names, features_names_suffix):
+def LSTM_with_vol_main_experiment(expiry, features_names, features_names_suffix):
     window = expiry*2
     batch_size = 128
 
@@ -82,23 +82,27 @@ def LSTM_main_experiment(expiry, features_names, features_names_suffix):
 
 
 for expiry in [5, 22, 66, 252]:
-    names = ['log_returns', 'best_metric', 'best_5', 'best_10', 'best_20']
+    names = ['vol_only', 'best_metric', 'vol_plus_4', 'vol_plus_9', 'vol_plus_19']
     best_features = find_n_best_features(expiry, 20)
 
-    # 1. abs_log_returns
-    metrics1 = LSTM_main_experiment(expiry=expiry, features_names='al_lme_prices_abs_log_returns', features_names_suffix=f'LSTM_{names[0]}_{pred_value_to_char(expiry)}_exp')
+    # 1. vol_only: Use only the corresponding volatility column instead of abs_log_returns
+    vol_column = f'{pred_value_to_char(expiry)}_vol'
+    metrics1 = LSTM_with_vol_main_experiment(expiry=expiry, features_names=vol_column, features_names_suffix=f'LSTM_with_vol_{names[0]}_{pred_value_to_char(expiry)}_exp')
 
-    # 2. best_metric
-    metrics2 = LSTM_main_experiment(expiry=expiry, features_names=best_features[0], features_names_suffix=f'LSTM_{names[1]}_{pred_value_to_char(expiry)}_exp')
+    # 2. best_metric: Same as before - use the single best feature
+    metrics2 = LSTM_with_vol_main_experiment(expiry=expiry, features_names=best_features[0], features_names_suffix=f'LSTM_with_vol_{names[1]}_{pred_value_to_char(expiry)}_exp')
 
-    # 3. best_10
-    metrics3 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:5], features_names_suffix=f'LSTM_{names[2]}_{pred_value_to_char(expiry)}_exp')
+    # 3. vol_plus_4: Use volatility + 4 best predictors (total 5 features)
+    vol_plus_4_features = [vol_column] + best_features[:4]
+    metrics3 = LSTM_with_vol_main_experiment(expiry=expiry, features_names=vol_plus_4_features, features_names_suffix=f'LSTM_with_vol_{names[2]}_{pred_value_to_char(expiry)}_exp')
     
-    # 4. top_10
-    metrics4 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:10], features_names_suffix=f'LSTM_{names[3]}_{pred_value_to_char(expiry)}_exp')
+    # 4. vol_plus_9: Use volatility + 9 best predictors (total 10 features)
+    vol_plus_9_features = [vol_column] + best_features[:9]
+    metrics4 = LSTM_with_vol_main_experiment(expiry=expiry, features_names=vol_plus_9_features, features_names_suffix=f'LSTM_with_vol_{names[3]}_{pred_value_to_char(expiry)}_exp')
 
-    # 5. top_20
-    metrics5 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:20], features_names_suffix=f'LSTM_{names[4]}_{pred_value_to_char(expiry)}_exp')
+    # 5. vol_plus_19: Use volatility + 19 best predictors (total 20 features)
+    vol_plus_19_features = [vol_column] + best_features[:19]
+    metrics5 = LSTM_with_vol_main_experiment(expiry=expiry, features_names=vol_plus_19_features, features_names_suffix=f'LSTM_with_vol_{names[4]}_{pred_value_to_char(expiry)}_exp')
 
     # Combine all metrics for this expiry
     expiry_metrics = {
@@ -107,7 +111,7 @@ for expiry in [5, 22, 66, 252]:
         'MAE': [metrics1['MAE'], metrics2['MAE'], metrics3['MAE'], metrics4['MAE'], metrics5['MAE']],
         'RMSE': [metrics1['RMSE'], metrics2['RMSE'], metrics3['RMSE'], metrics4['RMSE'], metrics5['RMSE']],
         'MSE': [metrics1['MSE'], metrics2['MSE'], metrics3['MSE'], metrics4['MSE'], metrics5['MSE']],
-        'MASE': [metrics1['MASE'], metrics2['MASE'], metrics4['MASE'], metrics5['MASE']]
+        'MASE': [metrics1['MASE'], metrics2['MASE'], metrics3['MASE'], metrics4['MASE'], metrics5['MASE']]
     }
 
     # Save metrics to CSV in the metrics directory
