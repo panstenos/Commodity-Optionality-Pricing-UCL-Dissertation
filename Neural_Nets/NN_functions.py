@@ -1010,6 +1010,7 @@ def train_model(model, optimizer, loss_function, train_loader, test_loader, epoc
 def plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, expiry, filename_suffix='', n_points=300, model_type='LSTM'):
     """
     Generates and saves train and test prediction plots into model-specific plots directory.
+    Training plot shows first 500 points, test plot shows last 250 test points.
     """
     def inverse_transform_predictions(X, y, model):
         predictions = model(X.to(device)).detach().cpu().numpy().flatten()
@@ -1030,21 +1031,23 @@ def plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scale
     output_dir = f"{model_type}_plots"
     os.makedirs(output_dir, exist_ok=True)
 
-    # Train predictions
+    # Train predictions - show first 500 points
     train_true, train_pred = inverse_transform_predictions(X_train, y_train, model)
+    train_points = 500
 
-    ax, fig1 = line_plot(train_true[:n_points], train_true[:n_points], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_train_{filename_suffix}', linecolor='red', show=False)
-    _, _ = line_plot(train_pred[:n_points], train_pred[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    ax, fig1 = line_plot(train_true[:train_points], train_true[:train_points], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_train_{filename_suffix}', linecolor='red', show=False)
+    _, _ = line_plot(train_pred[:train_points], train_pred[:train_points], ylabel='vol_pred', ax=ax, show=True)
     # fig.savefig(os.path.join(output_dir, f"{expiry}_vol_vs_true_train_{filename_suffix}.png"))
     # plt.show()
     plt.close()
 
 
-    # Test predictions
+    # Test predictions - show last 250 test points
     test_true, test_pred = inverse_transform_predictions(X_test, y_test, model)
+    test_points = 250  # Use last 250 points or all if less
 
-    ax, fig2 = line_plot(test_true[:n_points], test_true[:n_points], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_train_{filename_suffix}', linecolor='red', show=False)
-    _, _ = line_plot(test_pred[:n_points], test_pred[:n_points], ylabel='vol_pred', ax=ax, show=True)
+    ax, fig2 = line_plot(test_true[-test_points:], test_true[-test_points:], ylabel='vol_true', graphtitle=f'{expiry}_vs_true_test_{filename_suffix}', linecolor='red', show=False)
+    _, _ = line_plot(test_pred[-test_points:], test_pred[-test_points:], ylabel='vol_pred', ax=ax, show=True)
     # fig.savefig(os.path.join(output_dir, f"{expiry}_vol_vs_true_test_{filename_suffix}.png"))
     # plt.show()
     plt.close()
@@ -1054,7 +1057,7 @@ def plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scale
 
 def evaluate_and_print_metrics(model, X_test, y_test, y_scaler, window, device):
     """
-    Evaluates the model on the test set, prints metrics in one line, and returns them.
+    Evaluates the model on the last 250 test points, prints metrics in one line, and returns them.
     """
     model.eval()
     with torch.no_grad():
@@ -1068,13 +1071,20 @@ def evaluate_and_print_metrics(model, X_test, y_test, y_scaler, window, device):
     dummies_true[:, 0] = y_test.detach().cpu().numpy().flatten()
     test_true_vals = y_scaler.inverse_transform(dummies_true)[:, 0]
 
+    # Use only the last 250 test points for evaluation
+    test_points = 250
+    if test_points < len(test_true_vals):
+        test_true_vals = test_true_vals[-test_points:]
+        test_predictions = test_predictions[-test_points:]
+        print(f"Evaluating on last {test_points} test points (out of {len(y_test)} total test samples)")
+
     mape_val = mape(test_true_vals, test_predictions)
     mae_val = mae(test_true_vals, test_predictions)
     rmse_val = rmse(test_true_vals, test_predictions)
     mse_val = mse(test_true_vals, test_predictions)
     mase_val = mase(test_true_vals, test_predictions)  # Assumes mase() is defined
 
-    print(f"Test Set Metrics - MAPE: {mape_val:.2f}, MAE: {mae_val:.2f}, RMSE: {rmse_val:.2f}, MSE: {mse_val:.2f}, MASE: {mase_val:.2f}")
+    print(f"Test Set Metrics (Last {test_points} points) - MAPE: {mape_val:.2f}, MAE: {mae_val:.2f}, RMSE: {rmse_val:.2f}, MSE: {mse_val:.2f}, MASE: {mase_val:.2f}")
 
     return {
         "MAPE": mape_val,

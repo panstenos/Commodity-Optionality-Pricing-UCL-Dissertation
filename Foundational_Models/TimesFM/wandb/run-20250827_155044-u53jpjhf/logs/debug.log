@@ -1,0 +1,62 @@
+2025-08-27 15:50:44,629 INFO    MainThread:92860 [wandb_setup.py:_flush():80] Current SDK version is 0.21.1
+2025-08-27 15:50:44,629 INFO    MainThread:92860 [wandb_setup.py:_flush():80] Configure stats pid to 92860
+2025-08-27 15:50:44,629 INFO    MainThread:92860 [wandb_setup.py:_flush():80] Loading settings from /home/panstenos/.config/wandb/settings
+2025-08-27 15:50:44,629 INFO    MainThread:92860 [wandb_setup.py:_flush():80] Loading settings from /home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM/wandb/settings
+2025-08-27 15:50:44,630 INFO    MainThread:92860 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-08-27 15:50:44,630 ERROR   MainThread:92860 [wandb_setup.py:_flush():82] error in wandb.init()
+Traceback (most recent call last):
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/IPython/core/interactiveshell.py", line 3699, in run_code
+    exec(code_obj, self.user_global_ns, self.user_ns)
+  File "/tmp/ipykernel_92860/2220144655.py", line 1, in <module>
+    single_gpu_example()
+  File "/tmp/ipykernel_92860/1783156217.py", line 37, in single_gpu_example
+    finetuner = TimesFMFinetuner(model, config)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/finetuning/finetuning_torch.py", line 190, in __init__
+    self.metrics_logger = WandBLogger(config.wandb_project, config.__dict__,
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/finetuning/finetuning_torch.py", line 58, in __init__
+    wandb.init(project=project, config=config)
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1595, in init
+    wandb._sentry.reraise(e)
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/analytics/sentry.py", line 162, in reraise
+    raise exc.with_traceback(sys.exc_info()[2])
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 1523, in init
+    wi.maybe_login(init_settings)
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/wandb_init.py", line 191, in maybe_login
+    wandb_login._login(
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/wandb_login.py", line 325, in _login
+    wlogin.try_save_api_key(key)
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/wandb_login.py", line 181, in try_save_api_key
+    apikey.write_key(self._settings, key)
+  File "/home/panstenos/.pyenv/versions/3.11.10/lib/python3.11/site-packages/wandb/sdk/lib/apikey.py", line 313, in write_key
+    raise ValueError(f"API key must be 40 characters long, yours was {len(key)}")
+ValueError: API key must be 40 characters long, yours was 1
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:setup_run_log_directory():703] Logging user logs to /home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM/wandb/run-20250827_155044-u53jpjhf/logs/debug.log
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:setup_run_log_directory():704] Logging internal logs to /home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM/wandb/run-20250827_155044-u53jpjhf/logs/debug-internal.log
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:monkeypatch_ipython():622] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x72039834bbd0>
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:init():830] calling init triggers
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:init():835] wandb.init called with sweep_config: {}
+config: {'batch_size': 256, 'num_epochs': 5, 'learning_rate': 0.0001, 'weight_decay': 0.01, 'freq_type': 1, 'use_quantile_loss': True, 'quantiles': None, 'device': 'cuda', 'distributed': False, 'gpu_ids': [0], 'master_port': '12358', 'master_addr': 'localhost', 'use_wandb': True, 'wandb_project': 'timesfm-finetuning', 'log_every_n_steps': 10, 'val_check_interval': 0.5, '_wandb': {}}
+2025-08-27 15:50:44,631 INFO    MainThread:92860 [wandb_init.py:init():871] starting backend
+2025-08-27 15:50:44,851 INFO    MainThread:92860 [wandb_init.py:init():874] sending inform_init request
+2025-08-27 15:50:44,858 INFO    MainThread:92860 [wandb_init.py:init():882] backend started and connected
+2025-08-27 15:50:44,867 INFO    MainThread:92860 [wandb_run.py:_label_probe_notebook():1318] probe notebook
+2025-08-27 15:50:44,867 INFO    MainThread:92860 [wandb_run.py:_label_probe_notebook():1328] Unable to probe notebook: Expecting value: line 1 column 1 (char 0)
+2025-08-27 15:50:44,867 INFO    MainThread:92860 [wandb_init.py:init():953] updated telemetry
+2025-08-27 15:50:44,868 INFO    MainThread:92860 [wandb_init.py:init():977] communicating run to backend with 90.0 second timeout
+2025-08-27 15:50:45,632 INFO    MainThread:92860 [wandb_init.py:init():1029] starting run threads in backend
+2025-08-27 15:50:45,780 INFO    MainThread:92860 [wandb_run.py:_console_start():2494] atexit reg
+2025-08-27 15:50:45,780 INFO    MainThread:92860 [wandb_run.py:_redirect():2342] redirect: wrap_raw
+2025-08-27 15:50:45,780 INFO    MainThread:92860 [wandb_run.py:_redirect():2411] Wrapping output streams.
+2025-08-27 15:50:45,780 INFO    MainThread:92860 [wandb_run.py:_redirect():2434] Redirects installed.
+2025-08-27 15:50:45,783 INFO    MainThread:92860 [wandb_init.py:init():1075] run started, returning control to user process
+2025-08-27 15:58:38,796 INFO    MainThread:92860 [wandb_run.py:_finish():2260] finishing run panstenos-ucl/timesfm-finetuning/u53jpjhf
+2025-08-27 15:58:38,802 INFO    MainThread:92860 [jupyter.py:save_ipynb():404] not saving jupyter notebook
+2025-08-27 15:58:38,802 INFO    MainThread:92860 [wandb_init.py:_jupyter_teardown():607] cleaning up jupyter logic
+2025-08-27 15:58:38,802 INFO    MainThread:92860 [wandb_run.py:_atexit_cleanup():2459] got exitcode: 0
+2025-08-27 15:58:38,802 INFO    MainThread:92860 [wandb_run.py:_restore():2441] restore
+2025-08-27 15:58:38,802 INFO    MainThread:92860 [wandb_run.py:_restore():2447] restore done
+2025-08-27 15:58:40,266 INFO    MainThread:92860 [wandb_run.py:_footer_history_summary_info():3895] rendering history
+2025-08-27 15:58:40,267 INFO    MainThread:92860 [wandb_run.py:_footer_history_summary_info():3927] rendering summary
+2025-08-27 15:58:40,268 INFO    MainThread:92860 [wandb_run.py:_footer_sync_info():3856] logging synced files

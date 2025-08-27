@@ -17,7 +17,7 @@ if parent_dir not in sys.path:
 if neural_nets_dir not in sys.path:
     sys.path.insert(0, neural_nets_dir)
 
-from functions import pred_value_to_char, load_data, line_plot
+from functions import pred_value_to_char, load_data, line_plot, find_n_best_features
 import pandas as pd
 from NN_functions import preprocess_dataframe, get_dataloaders, create_model, train_model, plot_train_test_predictions, evaluate_and_print_metrics, train_one_epoch, validate_one_epoch
 
@@ -36,12 +36,6 @@ os.makedirs(plots_dir, exist_ok=True)
 os.makedirs(training_plots_dir, exist_ok=True)
 os.makedirs(metrics_dir, exist_ok=True)
 
-def find_n_best_features(expiry, n):
-    corr_file = os.path.join(parent_dir, 'feature_selection', 'absolute_feature_correlations.csv')
-    best_features = load_data(corr_file, index_col=0)
-    top_rows = best_features.sort_values(by=f'{pred_value_to_char(expiry)}_exp', ascending=False).head(n)
-    best_features = top_rows.index.tolist()
-    return best_features
 
 def LSTM_main_experiment(expiry, features_names, features_names_suffix):
     window = expiry*2
@@ -63,6 +57,7 @@ def LSTM_main_experiment(expiry, features_names, features_names_suffix):
     # Create and save training history plot using line_plot
     ax, training_fig = line_plot(train_losses, train_losses, ylabel='train_loss', graphtitle=f'Training History_{features_names_suffix}', linecolor='red', show=False)
     _, _ = line_plot(val_losses, val_losses, ylabel='test_loss', ax=ax, show=True)
+    
     # Save training plot
     training_plot_path = os.path.join(training_plots_dir, f'training_history_{features_names_suffix}.png')
     training_fig.savefig(training_plot_path, dpi=300, bbox_inches='tight')
@@ -91,13 +86,13 @@ for expiry in [5, 22, 66, 252]:
     # 2. best_metric
     metrics2 = LSTM_main_experiment(expiry=expiry, features_names=best_features[0], features_names_suffix=f'LSTM_{names[1]}_{pred_value_to_char(expiry)}_exp')
 
-    # 3. best_10
+    # 3. best_5
     metrics3 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:5], features_names_suffix=f'LSTM_{names[2]}_{pred_value_to_char(expiry)}_exp')
     
-    # 4. top_10
+    # 4. best_10
     metrics4 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:10], features_names_suffix=f'LSTM_{names[3]}_{pred_value_to_char(expiry)}_exp')
 
-    # 5. top_20
+    # 5. best_20
     metrics5 = LSTM_main_experiment(expiry=expiry, features_names=best_features[:20], features_names_suffix=f'LSTM_{names[4]}_{pred_value_to_char(expiry)}_exp')
 
     # Combine all metrics for this expiry

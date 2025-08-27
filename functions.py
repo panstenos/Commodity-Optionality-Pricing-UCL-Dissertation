@@ -207,3 +207,28 @@ def plot_squared_pacf(df, col_name):
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.close()  # Close the figure to free memory
     print(f"Plot saved as: {filename}")
+
+def find_n_best_features(expiry, n):
+    """
+    Find the n best features based on correlation with volatility for a given expiry.
+    
+    Parameters:
+    - expiry (int): The expiry period (5, 22, 66, or 252)
+    - n (int): Number of top features to return
+    
+    Returns:
+    - list: List of feature names representing the top n features
+    """
+    # Get the absolute path to the feature selection directory from functions.py
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    feature_selection_dir = os.path.join(current_file_dir, 'Feature_selection')
+    corr_file = os.path.join(feature_selection_dir, 'absolute_feature_correlations.csv')
+    
+    # Load the correlation data
+    best_features = load_data(corr_file, index_col=0)
+    
+    # Sort by correlation with the specific expiry and get top n
+    top_rows = best_features.sort_values(by=f'{pred_value_to_char(expiry)}_exp', ascending=False).head(n)
+    best_features = top_rows.index.tolist()
+    
+    return best_features

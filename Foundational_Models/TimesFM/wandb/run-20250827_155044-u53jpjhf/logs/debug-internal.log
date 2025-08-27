@@ -1,0 +1,15 @@
+{"time":"2025-08-27T15:50:44.867678313+01:00","level":"INFO","msg":"stream: starting","core version":"0.21.1"}
+{"time":"2025-08-27T15:50:45.252550385+01:00","level":"INFO","msg":"stream: created new stream","id":"u53jpjhf"}
+{"time":"2025-08-27T15:50:45.252624402+01:00","level":"INFO","msg":"stream: started","id":"u53jpjhf"}
+{"time":"2025-08-27T15:50:45.252907718+01:00","level":"INFO","msg":"handler: started","stream_id":"u53jpjhf"}
+{"time":"2025-08-27T15:50:45.253409386+01:00","level":"INFO","msg":"sender: started","stream_id":"u53jpjhf"}
+{"time":"2025-08-27T15:50:45.255321631+01:00","level":"INFO","msg":"writer: started","stream_id":"u53jpjhf"}
+{"time":"2025-08-27T15:55:37.939850084+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-08-27T15:56:19.196842673+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/panstenos-ucl/timesfm-finetuning/u53jpjhf/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-08-27T15:57:01.098770193+01:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/panstenos-ucl/timesfm-finetuning/u53jpjhf/file_stream","body":"\n<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n<title>502 Server Error</title>\n</head>\n<body text=#000000 bgcolor=#ffffff>\n<h1>Error: Server Error</h1>\n<h2>The server encountered a temporary error and could not complete your request.<p>Please try again in 30 seconds.</h2>\n<h2></h2>\n</body></html>\n"}
+{"time":"2025-08-27T15:58:39.809968935+01:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading output.log","runtime_seconds":0.103705091},{"desc":"uploading wandb-summary.json","runtime_seconds":0.103687587,"progress":"182B/182B"}],"total_operations":2}}
+{"time":"2025-08-27T15:58:40.068391617+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-08-27T15:58:40.271316293+01:00","level":"INFO","msg":"stream: closing","id":"u53jpjhf"}
+{"time":"2025-08-27T15:58:40.271345431+01:00","level":"INFO","msg":"handler: closed","stream_id":"u53jpjhf"}
+{"time":"2025-08-27T15:58:40.271584869+01:00","level":"INFO","msg":"sender: closed","stream_id":"u53jpjhf"}
+{"time":"2025-08-27T15:58:40.271598068+01:00","level":"INFO","msg":"stream: closed","id":"u53jpjhf"}

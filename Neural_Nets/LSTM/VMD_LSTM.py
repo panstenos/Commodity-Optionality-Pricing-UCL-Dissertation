@@ -5,6 +5,7 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 import sys
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Add the parent directories to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,11 +31,13 @@ main_results_dir = os.path.join(os.path.dirname(__file__), 'VMD_experiment_resul
 plots_dir = os.path.join(main_results_dir, 'plots')
 training_plots_dir = os.path.join(main_results_dir, 'training_plots')
 metrics_dir = os.path.join(main_results_dir, 'metrics')
+vmd_modes_dir = os.path.join(main_results_dir, 'vmd_modes_plots')
 
 # Create directories if they don't exist
 os.makedirs(plots_dir, exist_ok=True)
 os.makedirs(training_plots_dir, exist_ok=True)
 os.makedirs(metrics_dir, exist_ok=True)
+os.makedirs(vmd_modes_dir, exist_ok=True)
 
 def find_n_best_features(expiry, n):
     corr_file = os.path.join(parent_dir, 'feature_selection', 'absolute_feature_correlations.csv')
@@ -42,6 +45,71 @@ def find_n_best_features(expiry, n):
     top_rows = best_features.sort_values(by=f'{pred_value_to_char(expiry)}_exp', ascending=False).head(n)
     best_features = top_rows.index.tolist()
     return best_features
+
+def plot_vmd_modes(model, X_sample, y_sample, expiry, features_names_suffix, save_path):
+    """
+    Plot the decomposed VMD modes for a sample input
+    """
+    model.eval()
+    with torch.no_grad():
+        # Get a sample batch
+        if isinstance(X_sample, np.ndarray):
+            X_sample = torch.tensor(X_sample).float()
+        
+        # Ensure we have a batch dimension
+        if X_sample.ndim == 2:
+            X_sample = X_sample.unsqueeze(0)
+        
+        # Move to device
+        X_sample = X_sample.to(device)
+        
+        # Get the decomposed modes from the model
+        if hasattr(model, 'vmd_decompose'):
+            imf_modes = model.vmd_decompose(X_sample)
+            
+            # Convert to numpy for plotting
+            if isinstance(imf_modes, torch.Tensor):
+                imf_modes = imf_modes.cpu().numpy()
+            
+            # Plot the original signal and decomposed modes
+            fig, axes = plt.subplots(model.num_modes + 1, 1, figsize=(15, 3 * (model.num_modes + 1)))
+            fig.suptitle(f'VMD Decomposition - {features_names_suffix}', fontsize=16)
+            
+            # Plot original signal
+            original_signal = X_sample.cpu().numpy()[0, :, 0]  # First batch, all time steps, first feature
+            axes[0].plot(original_signal, 'b-', linewidth=2, label='Original Signal')
+            axes[0].set_title('Original Signal')
+            axes[0].set_ylabel('Amplitude')
+            axes[0].legend()
+            axes[0].grid(True, alpha=0.3)
+            
+            # Plot each decomposed mode
+            mode_names = ['Trend Mode', 'Seasonal Mode', 'Residual Mode']
+            colors = ['r-', 'g-', 'm-']
+            
+            for i in range(model.num_modes):
+                mode_signal = imf_modes[i, 0, :, 0]  # First batch, all time steps, first feature
+                axes[i+1].plot(mode_signal, colors[i], linewidth=2, label=f'{mode_names[i]} (IMF {i+1})')
+                axes[i+1].set_title(f'{mode_names[i]} (IMF {i+1})')
+                axes[i+1].set_ylabel('Amplitude')
+                axes[i+1].legend()
+                axes[i+1].grid(True, alpha=0.3)
+            
+            # Add x-label to the last subplot
+            axes[-1].set_xlabel('Time Steps')
+            
+            plt.tight_layout()
+            
+            # Save the plot
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.close(fig)
+            
+            print(f"VMD modes plot saved to: {save_path}")
+            
+            return imf_modes
+        else:
+            print("Model does not have vmd_decompose method")
+            return None
 
 def VMD_LSTM_main_experiment(expiry, features_names, features_names_suffix):
     window = expiry*2
@@ -71,6 +139,13 @@ def VMD_LSTM_main_experiment(expiry, features_names, features_names_suffix):
     training_plot_path = os.path.join(training_plots_dir, f'training_history_{features_names_suffix}.png')
     training_fig.savefig(training_plot_path, dpi=300, bbox_inches='tight')
     plt.close(training_fig)
+
+    # Plot VMD decomposed modes for a sample from training data
+    if len(X_train) > 0:
+        sample_idx = 0  # Use first sample
+        X_sample = X_train[sample_idx:sample_idx+1]  # Keep batch dimension
+        vmd_modes_plot_path = os.path.join(vmd_modes_dir, f'vmd_modes_{features_names_suffix}.png')
+        plot_vmd_modes(model, X_sample, y_train[sample_idx:sample_idx+1], expiry, features_names_suffix, vmd_modes_plot_path)
 
     # Plot the train and test predictions
     fig1, fig2 = plot_train_test_predictions(model, X_train, y_train, X_test, y_test, y_scaler, window, device, f'{pred_value_to_char(expiry)}_vol', features_names_suffix)
