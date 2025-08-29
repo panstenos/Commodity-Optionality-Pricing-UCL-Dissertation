@@ -1,0 +1,89 @@
+_wandb:
+    value:
+        cli_version: 0.21.1
+        e:
+            lg8wvcivy8hvdptnr895mzs3co3944m0:
+                codePath: timesfm_finetuned_toy.ipynb
+                codePathLocal: timesfm_finetuned_toy.ipynb
+                cpu_count: 11
+                cpu_count_logical: 22
+                cudaVersion: "12.5"
+                disk:
+                    /:
+                        total: "1081101176832"
+                        used: "56657899520"
+                email: panstenos@gmail.com
+                executable: /home/panstenos/.pyenv/versions/3.11.10/bin/python
+                gpu: NVIDIA GeForce RTX 4070 Laptop GPU
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ada
+                      memoryTotal: "8585740288"
+                      name: NVIDIA GeForce RTX 4070 Laptop GPU
+                      uuid: GPU-31c7b591-0f54-b8cb-6237-6a89ffadaa7a
+                host: Dell4ML
+                memory:
+                    total: "16480104448"
+                os: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+                program: /home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM/timesfm_finetuned_toy.ipynb
+                python: CPython 3.11.10
+                root: /home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM
+                startedAt: "2025-08-28T19:28:16.610080Z"
+                writerId: lg8wvcivy8hvdptnr895mzs3co3944m0
+        m: []
+        python_version: 3.11.10
+        t:
+            "1":
+                - 1
+                - 5
+                - 12
+                - 49
+                - 53
+            "2":
+                - 1
+                - 5
+                - 12
+                - 49
+                - 53
+            "3":
+                - 2
+                - 16
+            "4": 3.11.10
+            "5": 0.21.1
+            "8":
+                - 1
+            "12": 0.21.1
+            "13": linux-x86_64
+batch_size:
+    value: 64
+device:
+    value: cuda
+distributed:
+    value: false
+freq_type:
+    value: 0
+gpu_ids:
+    value:
+        - 0
+learning_rate:
+    value: 0.0001
+log_every_n_steps:
+    value: 20
+master_addr:
+    value: localhost
+master_port:
+    value: "12358"
+num_epochs:
+    value: 5
+quantiles:
+    value: null
+use_quantile_loss:
+    value: true
+use_wandb:
+    value: true
+val_check_interval:
+    value: 0.5
+wandb_project:
+    value: timesfm-finetuning
+weight_decay:
+    value: 0.01

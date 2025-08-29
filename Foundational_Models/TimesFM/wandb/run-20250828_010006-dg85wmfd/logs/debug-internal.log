@@ -1,0 +1,12 @@
+{"time":"2025-08-28T01:00:07.095589606+01:00","level":"INFO","msg":"stream: starting","core version":"0.21.1"}
+{"time":"2025-08-28T01:00:08.387793969+01:00","level":"INFO","msg":"stream: created new stream","id":"dg85wmfd"}
+{"time":"2025-08-28T01:00:08.387893513+01:00","level":"INFO","msg":"stream: started","id":"dg85wmfd"}
+{"time":"2025-08-28T01:00:08.387981882+01:00","level":"INFO","msg":"writer: started","stream_id":"dg85wmfd"}
+{"time":"2025-08-28T01:00:08.388059306+01:00","level":"INFO","msg":"sender: started","stream_id":"dg85wmfd"}
+{"time":"2025-08-28T01:00:08.388117134+01:00","level":"INFO","msg":"handler: started","stream_id":"dg85wmfd"}
+{"time":"2025-08-28T01:17:06.752828955+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-08-28T01:17:06.968316575+01:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-08-28T01:17:06.99469748+01:00","level":"INFO","msg":"stream: closing","id":"dg85wmfd"}
+{"time":"2025-08-28T01:17:06.995018333+01:00","level":"INFO","msg":"handler: closed","stream_id":"dg85wmfd"}
+{"time":"2025-08-28T01:17:06.995097065+01:00","level":"INFO","msg":"sender: closed","stream_id":"dg85wmfd"}
+{"time":"2025-08-28T01:17:06.995110278+01:00","level":"INFO","msg":"stream: closed","id":"dg85wmfd"}

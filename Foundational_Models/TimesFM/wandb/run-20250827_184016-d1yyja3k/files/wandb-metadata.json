@@ -1,0 +1,35 @@
+{
+  "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "python": "CPython 3.11.10",
+  "startedAt": "2025-08-27T17:40:16.781708Z",
+  "program": "/home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM/timesfm_finetuned_toy.ipynb",
+  "codePath": "timesfm_finetuned_toy.ipynb",
+  "codePathLocal": "timesfm_finetuned_toy.ipynb",
+  "email": "panstenos@gmail.com",
+  "root": "/home/panstenos/Commodity-Optionality-Pricing-UCL-Dissertation/Foundational_Models/TimesFM",
+  "host": "Dell4ML",
+  "executable": "/home/panstenos/.pyenv/versions/3.11.10/bin/python",
+  "cpu_count": 11,
+  "cpu_count_logical": 22,
+  "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "1081101176832",
+      "used": "56597082112"
+    }
+  },
+  "memory": {
+    "total": "16480108544"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "memoryTotal": "8585740288",
+      "architecture": "Ada",
+      "uuid": "GPU-31c7b591-0f54-b8cb-6237-6a89ffadaa7a"
+    }
+  ],
+  "cudaVersion": "12.5",
+  "writerId": "5k53d2tddscg07ecb4x0f8zmiw6p37x9"
+}

@@ -1,0 +1,12 @@
+{"time":"2025-08-28T21:09:17.419198865+01:00","level":"INFO","msg":"stream: starting","core version":"0.21.1"}
+{"time":"2025-08-28T21:09:17.721008201+01:00","level":"INFO","msg":"stream: created new stream","id":"olrwiiwi"}
+{"time":"2025-08-28T21:09:17.721081528+01:00","level":"INFO","msg":"stream: started","id":"olrwiiwi"}
+{"time":"2025-08-28T21:09:17.721185557+01:00","level":"INFO","msg":"writer: started","stream_id":"olrwiiwi"}
+{"time":"2025-08-28T21:09:17.721329528+01:00","level":"INFO","msg":"sender: started","stream_id":"olrwiiwi"}
+{"time":"2025-08-28T21:09:17.721360176+01:00","level":"INFO","msg":"handler: started","stream_id":"olrwiiwi"}
+{"time":"2025-08-28T21:15:47.068936287+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-08-28T21:15:47.302152461+01:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-08-28T21:15:47.319815428+01:00","level":"INFO","msg":"stream: closing","id":"olrwiiwi"}
+{"time":"2025-08-28T21:15:47.319863052+01:00","level":"INFO","msg":"handler: closed","stream_id":"olrwiiwi"}
+{"time":"2025-08-28T21:15:47.31993836+01:00","level":"INFO","msg":"sender: closed","stream_id":"olrwiiwi"}
+{"time":"2025-08-28T21:15:47.319948113+01:00","level":"INFO","msg":"stream: closed","id":"olrwiiwi"}

@@ -1,0 +1,12 @@
+{"time":"2025-08-28T21:02:15.933929678+01:00","level":"INFO","msg":"stream: starting","core version":"0.21.1"}
+{"time":"2025-08-28T21:02:16.302172724+01:00","level":"INFO","msg":"stream: created new stream","id":"dyelstef"}
+{"time":"2025-08-28T21:02:16.302221376+01:00","level":"INFO","msg":"stream: started","id":"dyelstef"}
+{"time":"2025-08-28T21:02:16.302268237+01:00","level":"INFO","msg":"writer: started","stream_id":"dyelstef"}
+{"time":"2025-08-28T21:02:16.302309515+01:00","level":"INFO","msg":"sender: started","stream_id":"dyelstef"}
+{"time":"2025-08-28T21:02:16.302371413+01:00","level":"INFO","msg":"handler: started","stream_id":"dyelstef"}
+{"time":"2025-08-28T21:08:55.779598746+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-08-28T21:08:55.954419966+01:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-08-28T21:08:55.969624458+01:00","level":"INFO","msg":"stream: closing","id":"dyelstef"}
+{"time":"2025-08-28T21:08:55.96968448+01:00","level":"INFO","msg":"handler: closed","stream_id":"dyelstef"}
+{"time":"2025-08-28T21:08:55.969785935+01:00","level":"INFO","msg":"sender: closed","stream_id":"dyelstef"}
+{"time":"2025-08-28T21:08:55.96980142+01:00","level":"INFO","msg":"stream: closed","id":"dyelstef"}

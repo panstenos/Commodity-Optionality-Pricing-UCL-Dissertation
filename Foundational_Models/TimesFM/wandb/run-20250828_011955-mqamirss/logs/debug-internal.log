@@ -1,0 +1,12 @@
+{"time":"2025-08-28T01:19:55.613896466+01:00","level":"INFO","msg":"stream: starting","core version":"0.21.1"}
+{"time":"2025-08-28T01:19:55.99782744+01:00","level":"INFO","msg":"stream: created new stream","id":"mqamirss"}
+{"time":"2025-08-28T01:19:55.99792126+01:00","level":"INFO","msg":"stream: started","id":"mqamirss"}
+{"time":"2025-08-28T01:19:55.997961916+01:00","level":"INFO","msg":"writer: started","stream_id":"mqamirss"}
+{"time":"2025-08-28T01:19:55.998038326+01:00","level":"INFO","msg":"handler: started","stream_id":"mqamirss"}
+{"time":"2025-08-28T01:19:55.99807595+01:00","level":"INFO","msg":"sender: started","stream_id":"mqamirss"}
+{"time":"2025-08-28T01:40:00.774408149+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-08-28T01:40:01.03194268+01:00","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2025-08-28T01:40:01.049633414+01:00","level":"INFO","msg":"stream: closing","id":"mqamirss"}
+{"time":"2025-08-28T01:40:01.049672858+01:00","level":"INFO","msg":"handler: closed","stream_id":"mqamirss"}
+{"time":"2025-08-28T01:40:01.049712975+01:00","level":"INFO","msg":"sender: closed","stream_id":"mqamirss"}
+{"time":"2025-08-28T01:40:01.049717756+01:00","level":"INFO","msg":"stream: closed","id":"mqamirss"}
