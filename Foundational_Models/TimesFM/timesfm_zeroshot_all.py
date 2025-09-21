@@ -123,7 +123,7 @@ for expiry in horizon_grid:
         plt.close(fig)
         print(f"[saved] {plot_path}")
 
-        m = calculate_prediction_metrics(pred_van, test_true)
+        m = calculate_prediction_metrics(test_true, pred_van)
         rows.append({
             "expiry": expiry,
             "window_size": window_size,
